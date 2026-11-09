@@ -1,0 +1,105 @@
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const KEY = "vocab.decks";
+let decks = load(), cur = null, queue = [], total = 0;
+
+function load(){ try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } }
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(decks)); return true; } catch { alert("Stockage plein : exporte tes listes puis supprime-en."); return false; } }
+function show(id){ document.querySelectorAll("main>section").forEach(s => s.hidden = s.id !== id); window.scrollTo(0,0); }
+
+function renderHome(){
+  const el = $("#decks");
+  el.innerHTML = decks.length ? decks.map(d => `<div class="deck"><b>${esc(d.title)}<small>${d.cards.length} cartes</small></b>
+    <button data-a="study" data-id="${d.id}">Réviser</button><button class="ghost" data-a="edit" data-id="${d.id}">Modifier</button><button class="ghost" data-a="del" data-id="${d.id}" aria-label="Supprimer">✕</button></div>`).join("")
+    : `<p class="empty">Aucune liste pour l’instant. Prends une page en photo pour commencer.</p>`;
+  show("home");
+}
+$("#decks").onclick = e => {
+  const b = e.target.closest("button"); if(!b) return;
+  const d = decks.find(x => x.id === b.dataset.id); if(!d) return;
+  if(b.dataset.a === "study") startStudy(d);
+  if(b.dataset.a === "edit"){ cur = JSON.parse(JSON.stringify(d)); renderEdit(); }
+  if(b.dataset.a === "del" && confirm(`Supprimer « ${d.title} » ?`)){ decks = decks.filter(x => x !== d); save(); renderHome(); }
+};
+
+// Photo → réduction → API
+function resize(file, max = 1600){
+  return new Promise((ok, ko) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const r = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas"); c.width = img.width * r; c.height = img.height * r;
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); ok(c.toDataURL("image/jpeg", .85).split(",")[1]);
+    };
+    img.onerror = () => ko(new Error("Image illisible."));
+    img.src = url;
+  });
+}
+$("#file").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if(!f) return;
+  $("#homeErr").hidden = true; show("loading");
+  try{
+    const image = await resize(f);
+    const r = await fetch("api.php", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ image, mime:"image/jpeg" }) });
+    const j = await r.json().catch(() => ({}));
+    if(!r.ok) throw new Error(j.error || "Erreur du serveur.");
+    cur = { id: null, title: j.title || "Nouvelle liste", cards: j.cards.map(c => ({ front: c.front, back: c.back })) };
+    renderEdit();
+  }catch(err){ renderHome(); $("#homeErr").textContent = err.message + " Réessaie avec une photo plus nette."; $("#homeErr").hidden = false; }
+};
+
+// Vérification
+function renderEdit(){
+  $("#etitle").value = cur.title;
+  $("#ecards").innerHTML = cur.cards.map((c,i) => `<div class="edit"><input type="text" data-i="${i}" data-k="front" value="${esc(c.front)}" aria-label="Recto"><input type="text" data-i="${i}" data-k="back" value="${esc(c.back)}" aria-label="Verso"><button data-del="${i}" aria-label="Supprimer la carte">✕</button></div>`).join("");
+  show("edit");
+}
+$("#etitle").oninput = e => cur.title = e.target.value;
+$("#ecards").oninput = e => { const t = e.target; if(t.dataset.k) cur.cards[t.dataset.i][t.dataset.k] = t.value; };
+$("#ecards").onclick = e => { const b = e.target.closest("[data-del]"); if(b){ cur.cards.splice(+b.dataset.del, 1); renderEdit(); } };
+$("#add").onclick = () => { cur.cards.push({front:"",back:""}); renderEdit(); $("#ecards").lastElementChild.querySelector("input").focus(); };
+$("#cancel").onclick = renderHome;
+$("#saveStudy").onclick = () => {
+  cur.cards = cur.cards.filter(c => c.front.trim() || c.back.trim());
+  if(!cur.cards.length) return alert("Ajoute au moins une carte.");
+  cur.title = cur.title.trim() || "Ma liste";
+  if(cur.id){ decks = decks.map(d => d.id === cur.id ? cur : d); } else { cur.id = Date.now().toString(36); decks.unshift(cur); }
+  if(save()) startStudy(cur);
+};
+
+// Révision
+let flipped = false;
+function startStudy(d){ cur = d; queue = d.cards.map(c => c).sort(() => Math.random() - .5); total = queue.length; missed = 0; next(); show("study"); }
+let missed = 0;
+function next(){
+  if(!queue.length){ $("#doneTxt").textContent = missed ? `${total} cartes sues, dont ${missed} revues après une erreur.` : `Les ${total} cartes étaient sues du premier coup.`; return show("done"); }
+  flipped = false; $("#card").classList.remove("flip"); $("#judge").classList.add("invisible"); $("#hint").classList.remove("invisible");
+  $("#fr").textContent = queue[0].front; $("#bk").textContent = queue[0].back;
+  $("#count").textContent = `${total - queue.length + 1} / ${total}`;
+  $("#prog").style.width = ((total - queue.length) / total * 100) + "%";
+}
+function flip(){ flipped = !flipped; $("#card").classList.toggle("flip", flipped); if(flipped){ $("#judge").classList.remove("invisible"); $("#hint").classList.add("invisible"); } }
+$("#card").onclick = flip;
+$("#got").onclick = () => { queue.shift(); next(); };
+$("#miss").onclick = () => { missed++; queue.push(queue.shift()); next(); };
+$("#quit").onclick = renderHome; $("#home2").onclick = renderHome;
+$("#again").onclick = () => startStudy(cur);
+
+// Export / import
+$("#exp").onclick = () => {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(decks, null, 2)], {type:"application/json"}));
+  a.download = "vocab-listes.json"; a.click();
+};
+$("#imp").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if(!f) return;
+  try{
+    const arr = JSON.parse(await f.text());
+    if(!Array.isArray(arr)) throw 0;
+    arr.forEach(d => { if(d && d.title && Array.isArray(d.cards) && !decks.some(x => x.id === d.id)) decks.push({ id: d.id || Date.now().toString(36) + Math.random().toString(36).slice(2,5), title: d.title, cards: d.cards.map(c => ({front:String(c.front), back:String(c.back)})) }); });
+    save(); renderHome();
+  }catch{ alert("Ce fichier n’est pas une sauvegarde Vocab valide."); }
+};
+
+renderHome();
