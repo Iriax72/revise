@@ -41,7 +41,7 @@ $("#file").onchange = async e => {
   $("#homeErr").hidden = true; show("loading");
   try{
     const image = await resize(f);
-    const r = await fetch("api.php", { method:"POST", headers:{"Content-Type":"application/json","X-Requested-With":"vocab"}, body: JSON.stringify({ image, mime:"image/jpeg" }) });
+    const r = await fetch("api.php", { method:"POST", headers:{"Content-Type":"application/json","X-Requested-With":"vocab"}, body: JSON.stringify({ image, consent: CONSENT_V }) });
     const j = await r.json().catch(() => ({}));
     if(!r.ok) throw new Error(j.error || "Erreur du serveur.");
     cur = { id: null, title: j.title || "Nouvelle liste", cards: j.cards.map(c => ({ front: c.front, back: c.back })) };
@@ -108,5 +108,26 @@ $("#imp").onchange = async e => {
     save(); renderHome();
   }catch{ alert("Ce fichier n’est pas une sauvegarde Vocab valide."); }
 };
+
+// Consentement : l'utilisateur doit confirmer ses engagements avant tout envoi à Google
+const CONSENT_V = 1; // à incrémenter si le texte de l'écran de consentement change (même valeur dans api.php)
+let sessionConsent = false, afterConsent = false;
+function hasConsent(){ try { const c = JSON.parse(localStorage.getItem("vocab.consent")); if(c && c.v === CONSENT_V) return true; } catch {} return sessionConsent; }
+function updateConsentBtn(){ $("#consentYes").disabled = ![...document.querySelectorAll(".ck")].every(c => c.checked); }
+function showConsent(fromUpload){
+  afterConsent = fromUpload; const ok = hasConsent();
+  document.querySelectorAll(".ck").forEach(c => c.checked = ok);
+  $("#consentRevoke").hidden = !ok; updateConsentBtn(); show("consent");
+}
+document.querySelectorAll(".ck").forEach(c => c.onchange = updateConsentBtn);
+$("#file").addEventListener("click", e => { if(!hasConsent()){ e.preventDefault(); showConsent(true); } });
+$("#privacy").onclick = () => showConsent(false);
+$("#consentNo").onclick = renderHome;
+$("#consentYes").onclick = () => {
+  sessionConsent = true;
+  try { localStorage.setItem("vocab.consent", JSON.stringify({ v: CONSENT_V, t: new Date().toISOString() })); } catch {}
+  renderHome(); if(afterConsent) $("#file").click();
+};
+$("#consentRevoke").onclick = () => { sessionConsent = false; try { localStorage.removeItem("vocab.consent"); } catch {} renderHome(); };
 
 renderHome();
