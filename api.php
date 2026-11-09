@@ -68,7 +68,7 @@ function call_gemini($model, $body, $headers) {
             CURLOPT_POSTFIELDS => $body,
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 60,
+            CURLOPT_TIMEOUT => 40,
         ]);
         $res = curl_exec($ch);
         $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -92,15 +92,22 @@ function call_gemini($model, $body, $headers) {
 $custom = getenv('GEMINI_MODEL') ?: '';
 $models = array_values(array_unique(array_filter([$custom, 'gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-2.5-flash'])));
 
+@set_time_limit(120);
+$retryable = [404, 429, 500, 503, 504]; // modèle introuvable, quota, ou surcharge : on retente / on change de modèle
 $res = false; $status = 0;
 foreach ($models as $model) {
-    [$status, $res] = call_gemini($model, $body, $headers);
-    if ($status !== 404) break; // 404 = modèle introuvable : on tente le suivant
+    for ($try = 0; $try < 2; $try++) {
+        [$status, $res] = call_gemini($model, $body, $headers);
+        if (!in_array($status, [500, 503, 504])) break; // surcharge passagère : on réessaie une fois
+        sleep(2);
+    }
+    if (!in_array($status, $retryable)) break; // succès ou erreur définitive
 }
 
 if ($res === false || !$res) fail(502, 'Impossible de joindre Gemini.');
 $data = json_decode($res, true);
 if ($status === 429) fail(429, 'Limite gratuite atteinte. Réessaie dans une minute.');
+if ($status === 503) fail(503, 'Gemini est surchargé en ce moment. Réessaie dans quelques instants.');
 if ($status >= 400) {
     $detail = $data['error']['message'] ?? '';
     fail(502, 'Gemini a refusé la requête (code ' . $status . ($detail ? ' : ' . $detail : '') . ').');
