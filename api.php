@@ -5,6 +5,7 @@ header('X-Content-Type-Options: nosniff');
 
 const MAX_BODY  = 7000000;  // taille max de la requête (octets)
 const MAX_IMAGE = 5000000;  // taille max de l'image décodée (octets)
+const CONSENT_VERSION = 1;  // même valeur que CONSENT_V dans app.js
 
 function fail($code, $msg, $retry = 0) {
     http_response_code($code);
@@ -56,8 +57,9 @@ function client_ip() {
         if (filter_var($last, FILTER_VALIDATE_IP)) $ip = $last;
     }
     $bin = @inet_pton($ip);
-    if ($bin !== false && strlen($bin) === 16) return bin2hex(substr($bin, 0, 8)); // IPv6 : bloc /64
-    return bin2hex($bin !== false ? $bin : $ip);
+    if ($bin !== false && strlen($bin) === 16) $ip = bin2hex(substr($bin, 0, 8)); // IPv6 : bloc /64
+    // Empreinte non réversible : l'adresse IP elle-même n'est jamais stockée.
+    return substr(hash_hmac('sha256', $ip, env('GEMINI_API_KEY', 'sel')), 0, 32);
 }
 
 // Renvoie 0 si la requête est autorisée, sinon le nombre de secondes à attendre.
@@ -111,6 +113,7 @@ $raw = file_get_contents('php://input', false, null, 0, MAX_BODY + 1);
 if ($raw === false || strlen($raw) > MAX_BODY) fail(413, 'Image trop lourde.');
 $in = json_decode($raw, true);
 if (!is_array($in) || !is_string($in['image'] ?? null)) fail(400, 'Requête invalide.');
+if (($in['consent'] ?? null) !== CONSENT_VERSION) fail(403, 'Tu dois d’abord accepter les conditions d’utilisation.');
 
 $bin = base64_decode($in['image'], true);
 if ($bin === false || strlen($bin) < 1000 || strlen($bin) > MAX_IMAGE) fail(400, 'Image invalide ou trop lourde.');
