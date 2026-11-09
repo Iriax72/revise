@@ -52,13 +52,16 @@ $("#file").onchange = async e => {
 // Vérification
 function renderEdit(){
   $("#etitle").value = cur.title;
-  $("#ecards").innerHTML = cur.cards.map((c,i) => `<div class="edit"><input type="text" data-i="${i}" data-k="front" value="${esc(c.front)}" aria-label="Recto"><input type="text" data-i="${i}" data-k="back" value="${esc(c.back)}" aria-label="Verso"><button data-del="${i}" aria-label="Supprimer la carte">✕</button></div>`).join("");
+  $("#ecards").innerHTML = cur.cards.map((c,i) => `<div class="edit"><textarea rows="1" data-i="${i}" data-k="front" aria-label="Recto">${esc(c.front)}</textarea><textarea rows="1" data-i="${i}" data-k="back" aria-label="Verso">${esc(c.back)}</textarea><button data-del="${i}" aria-label="Supprimer la carte">✕</button></div>`).join("");
   show("edit");
+  requestAnimationFrame(() => document.querySelectorAll("#ecards textarea").forEach(autosize));
 }
+function autosize(t){ t.style.height = "auto"; t.style.height = t.scrollHeight + 4 + "px"; }
+window.addEventListener("resize", () => document.querySelectorAll("#ecards textarea").forEach(autosize));
 $("#etitle").oninput = e => cur.title = e.target.value;
-$("#ecards").oninput = e => { const t = e.target; if(t.dataset.k) cur.cards[t.dataset.i][t.dataset.k] = t.value; };
+$("#ecards").oninput = e => { const t = e.target; if(t.dataset.k){ cur.cards[t.dataset.i][t.dataset.k] = t.value; autosize(t); } };
 $("#ecards").onclick = e => { const b = e.target.closest("[data-del]"); if(b){ cur.cards.splice(+b.dataset.del, 1); renderEdit(); } };
-$("#add").onclick = () => { cur.cards.push({front:"",back:""}); renderEdit(); $("#ecards").lastElementChild.querySelector("input").focus(); };
+$("#add").onclick = () => { cur.cards.push({front:"",back:""}); renderEdit(); $("#ecards").lastElementChild.querySelector("textarea").focus(); };
 $("#cancel").onclick = renderHome;
 $("#saveStudy").onclick = () => {
   cur.cards = cur.cards.filter(c => c.front.trim() || c.back.trim());
