@@ -20,7 +20,7 @@
   <div class="row"><button class="ghost" id="exp">Exporter</button><label class="btn ghost">Importer<input id="imp" type="file" accept="application/json" hidden></label></div>
 </section>
 
-<section id="loading" hidden class="center"><div class="spin"></div><h2>Lecture de ta page…</h2><p class="sub">Cela prend quelques secondes.</p></section>
+<section id="loading" hidden class="center narrow"><div class="spin"></div><h2>Lecture de ta page…</h2><p class="sub">Cela prend quelques secondes.</p></section>
 
 <section id="edit" hidden>
   <h2>Vérifie tes cartes</h2>
@@ -31,15 +31,15 @@
   <div class="row"><button class="ghost" id="cancel">Annuler</button><button class="main" id="saveStudy">Enregistrer et réviser</button></div>
 </section>
 
-<section id="study" hidden>
+<section id="study" hidden class="narrow">
   <div class="meta"><button class="ghost small" id="quit">Quitter</button><span id="count"></span></div>
   <div class="bar"><i id="prog"></i></div>
   <button class="card sheet" id="card" aria-label="Retourner la carte"><div class="in"><div class="face sheet" id="fr"></div><div class="face back sheet" id="bk"></div></div></button>
   <p class="hint" id="hint">Touche la carte pour la retourner</p>
-  <div class="row invisible" id="judge"><button class="miss" id="miss">Pas su</button><button class="got" id="got">Su</button></div>
+  <div class="row judge-row invisible" id="judge"><button class="miss" id="miss">Pas su</button><button class="got" id="got">Su</button></div>
 </section>
 
-<section id="done" hidden class="center">
+<section id="done" hidden class="center narrow">
   <h1>Bravo<span>.</span></h1>
   <p class="sub" id="doneTxt"></p>
   <button class="main spaced" id="again">Recommencer</button>
