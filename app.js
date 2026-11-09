@@ -73,12 +73,16 @@ $("#saveStudy").onclick = () => {
 
 // Révision
 let flipped = false;
+let reversed = localStorage.getItem("vocab.reversed") === "1";
+function renderDir(){ const b = $("#rev"); b.textContent = reversed ? "Droite → gauche ⇄" : "Gauche → droite ⇄"; b.setAttribute("aria-pressed", reversed); }
+$("#rev").onclick = () => { reversed = !reversed; try { localStorage.setItem("vocab.reversed", reversed ? "1" : "0"); } catch {} renderDir(); if(queue.length) next(); };
+renderDir();
 function startStudy(d){ cur = d; queue = d.cards.map(c => c).sort(() => Math.random() - .5); total = queue.length; missed = 0; next(); show("study"); }
 let missed = 0;
 function next(){
   if(!queue.length){ $("#doneTxt").textContent = missed ? `${total} cartes sues, dont ${missed} revues après une erreur.` : `Les ${total} cartes étaient sues du premier coup.`; return show("done"); }
   flipped = false; $("#card").classList.remove("flip"); $("#judge").classList.add("invisible"); $("#hint").classList.remove("invisible");
-  $("#fr").textContent = queue[0].front; $("#bk").textContent = queue[0].back;
+  $("#fr").textContent = queue[0][reversed ? "back" : "front"]; $("#bk").textContent = queue[0][reversed ? "front" : "back"];
   $("#count").textContent = `${total - queue.length + 1} / ${total}`;
   $("#prog").style.width = ((total - queue.length) / total * 100) + "%";
 }
