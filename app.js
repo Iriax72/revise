@@ -46,7 +46,7 @@ $("#file").onchange = async e => {
     if(!r.ok) throw new Error(j.error || "Erreur du serveur.");
     cur = { id: null, title: j.title || "Nouvelle liste", cards: j.cards.map(c => ({ front: c.front, back: c.back })) };
     renderEdit();
-  }catch(err){ renderHome(); $("#homeErr").textContent = err.message + " Réessaie avec une photo plus nette."; $("#homeErr").hidden = false; }
+  }catch(err){ renderHome(); $("#homeErr").textContent = err.message; $("#homeErr").hidden = false; }
 };
 
 // Vérification
