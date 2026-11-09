@@ -41,7 +41,7 @@ $("#file").onchange = async e => {
   $("#homeErr").hidden = true; show("loading");
   try{
     const image = await resize(f);
-    const r = await fetch("api.php", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ image, mime:"image/jpeg" }) });
+    const r = await fetch("api.php", { method:"POST", headers:{"Content-Type":"application/json","X-Requested-With":"vocab"}, body: JSON.stringify({ image, mime:"image/jpeg" }) });
     const j = await r.json().catch(() => ({}));
     if(!r.ok) throw new Error(j.error || "Erreur du serveur.");
     cur = { id: null, title: j.title || "Nouvelle liste", cards: j.cards.map(c => ({ front: c.front, back: c.back })) };
