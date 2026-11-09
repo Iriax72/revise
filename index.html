@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vocab – révise depuis une photo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<section id="home">
+  <h1>Vocab<span>.</span></h1>
+  <p class="sub">Prends ton vocabulaire en photo, révise-le en cartes.</p>
+  <div id="homeErr" class="err" hidden></div>
+  <label class="btn main"><input id="file" type="file" accept="image/*" hidden>Photographier ma page</label>
+  <div class="deck-list" id="decks"></div>
+  <div class="row"><button class="ghost" id="exp">Exporter</button><label class="btn ghost">Importer<input id="imp" type="file" accept="application/json" hidden></label></div>
+</section>
+
+<section id="loading" hidden class="center"><div class="spin"></div><h2>Lecture de ta page…</h2><p class="sub">Cela prend quelques secondes.</p></section>
+
+<section id="edit" hidden>
+  <h2>Vérifie tes cartes</h2>
+  <p class="sub">Corrige ou supprime ce qui est faux avant de réviser.</p>
+  <input type="text" id="etitle" class="title" aria-label="Titre de la liste">
+  <div id="ecards"></div>
+  <button class="ghost full spaced" id="add">Ajouter une carte</button>
+  <div class="row"><button class="ghost" id="cancel">Annuler</button><button class="main" id="saveStudy">Enregistrer et réviser</button></div>
+</section>
+
+<section id="study" hidden>
+  <div class="meta"><button class="ghost small" id="quit">Quitter</button><span id="count"></span></div>
+  <div class="bar"><i id="prog"></i></div>
+  <button class="card sheet" id="card" aria-label="Retourner la carte"><div class="in"><div class="face sheet" id="fr"></div><div class="face back sheet" id="bk"></div></div></button>
+  <p class="hint" id="hint">Touche la carte pour la retourner</p>
+  <div class="row invisible" id="judge"><button class="miss" id="miss">Pas su</button><button class="got" id="got">Su</button></div>
+</section>
+
+<section id="done" hidden class="center">
+  <h1>Bravo<span>.</span></h1>
+  <p class="sub" id="doneTxt"></p>
+  <button class="main spaced" id="again">Recommencer</button>
+  <button class="ghost full" id="home2">Retour à l’accueil</button>
+</section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
