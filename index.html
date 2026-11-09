@@ -4,9 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Vocab – révise depuis une photo</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -18,6 +15,24 @@
   <label class="btn main"><input id="file" type="file" accept="image/*" hidden>Photographier ma page</label>
   <div class="deck-list" id="decks"></div>
   <div class="row"><button class="ghost" id="exp">Exporter</button><label class="btn ghost">Importer<input id="imp" type="file" accept="application/json" hidden></label></div>
+  <div class="foot"><button id="privacy">Confidentialité et conditions</button></div>
+</section>
+
+<section id="consent" hidden>
+  <h2>Avant d’envoyer une photo</h2>
+  <p class="sub">Pour lire ta page, cette application envoie ta photo à Google (service Gemini). Voici ce que cela implique :</p>
+  <ul>
+    <li>Ta photo quitte ce site et est traitée par Google, dont les serveurs peuvent se trouver hors de Suisse et de l’Union européenne.</li>
+    <li>Google peut conserver temporairement le contenu envoyé et, selon l’offre de service utilisée, le réutiliser pour améliorer ses produits ; des personnes peuvent alors le relire. N’envoie donc rien de personnel ni de confidentiel.</li>
+    <li>Ce site ne conserve pas ta photo : elle n’est pas enregistrée sur le serveur. Tes listes restent uniquement dans ton navigateur.</li>
+    <li>Pour bloquer les abus, le serveur garde un compteur d’utilisation temporaire, lié à une empreinte non réversible de ton adresse IP.</li>
+  </ul>
+  <label class="check"><input type="checkbox" class="ck">J’ai 18 ans ou plus.</label>
+  <label class="check"><input type="checkbox" class="ck">Je n’enverrai que du vocabulaire : aucune donnée personnelle (nom, visage, adresse, informations sur d’autres personnes) ni contenu confidentiel.</label>
+  <label class="check"><input type="checkbox" class="ck">J’ai le droit d’utiliser ce document pour mon étude personnelle, et j’accepte que Google le traite comme décrit ci-dessus.</label>
+  <div class="links"><a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener noreferrer">Conditions de l’API Gemini</a><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Confidentialité de Google</a></div>
+  <div class="row"><button class="ghost" id="consentNo">Annuler</button><button class="main" id="consentYes" disabled>Accepter et continuer</button></div>
+  <button class="ghost link-danger full" id="consentRevoke" hidden>Retirer mon consentement</button>
 </section>
 
 <section id="loading" hidden class="center narrow"><div class="spin"></div><h2>Lecture de ta page…</h2><p class="sub">Cela prend quelques secondes.</p></section>
